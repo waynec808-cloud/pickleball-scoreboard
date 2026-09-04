@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#111111">
+
+  <title>Pickleball Scoreboard</title>
+
+  <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      min-height: 100%;
+      background: #111;
+      font-family: Arial, Helvetica, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      overscroll-behavior: none;
+      touch-action: manipulation;
+    }
+
+    body {
+      padding: max(10px, env(safe-area-inset-top))
+               max(10px, env(safe-area-inset-right))
+               max(10px, env(safe-area-inset-bottom))
+               max(10px, env(safe-area-inset-left));
+    }
+
+    .scoreboard {
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .scores {
+      display: flex;
+      gap: 10px;
+      height: 68vh;
+      min-height: 400px;
+    }
+
+    .team {
+      flex: 1;
+      position: relative;
+      border-radius: 18px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .team-a { background: #1267d6; }
+    .team-b { background: #d62828; }
+
+    .score {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: clamp(170px, 34vw, 440px);
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .server {
+      position: absolute;
+      right: 7%;
+      bottom: 6%;
+      color: white;
+      font-size: clamp(50px, 8vw, 105px);
+      font-weight: 700;
+      min-width: 1em;
+      text-align: right;
+      cursor: pointer;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    button {
+      min-height: 80px;
+      border: 0;
+      border-radius: 12px;
+      font-size: clamp(17px, 2.5vw, 30px);
+      font-weight: bold;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button:active { transform: scale(0.99); }
+
+    .utilities {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      margin-top: 12px;
+    }
+
+    .utilities button {
+      min-height: 55px;
+      padding: 0 45px;
+      font-size: 20px;
+    }
+
+    @media (max-width: 700px) {
+      body { padding: 8px; }
+      .scores { gap: 6px; min-height: 280px; }
+      .controls { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+
+<body>
+<div class="scoreboard">
+  <div class="scores">
+    <div id="leftPanel" class="team">
+      <div id="leftScore" class="score"></div>
+      <div id="leftServer" class="server"></div>
+    </div>
+
+    <div id="rightPanel" class="team">
+      <div id="rightScore" class="score"></div>
+      <div id="rightServer" class="server"></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="point()">POINT</button>
+    <button onclick="nextServer()">NEXT SERVER</button>
+    <button onclick="sideOut()">SIDE OUT</button>
+    <button onclick="switchSides()">SWITCH SIDES</button>
+  </div>
+
+  <div class="utilities">
+    <button onclick="undo()">UNDO</button>
+    <button onclick="resetGame()">RESET</button>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'pickleballScoreboardStateV1';
+
+const defaultState = {
+  scoreA: 0,
+  scoreB: 0,
+  servingTeam: 'A',
+  serverNumber: 2,
+  leftTeam: 'A'
+};
+
+let state = loadState();
+let previousState = null;
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return structuredClone(defaultState);
+    const parsed = JSON.parse(saved);
+    return { ...defaultState, ...parsed };
+  } catch (e) {
+    return structuredClone(defaultState);
+  }
+}
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function rememberState() {
+  previousState = JSON.parse(JSON.stringify(state));
+}
+
+function render() {
+  const leftTeam = state.leftTeam;
+  const rightTeam = leftTeam === 'A' ? 'B' : 'A';
+
+  renderTeam('leftPanel', 'leftScore', 'leftServer', leftTeam);
+  renderTeam('rightPanel', 'rightScore', 'rightServer', rightTeam);
+}
+
+function renderTeam(panelId, scoreId, serverId, team) {
+  const panel = document.getElementById(panelId);
+  const score = document.getElementById(scoreId);
+  const server = document.getElementById(serverId);
+
+  panel.className = 'team ' + (team === 'A' ? 'team-a' : 'team-b');
+  score.textContent = team === 'A' ? state.scoreA : state.scoreB;
+  server.textContent = state.servingTeam === team ? state.serverNumber : '';
+
+  panel.onclick = function(e) {
+    if (e.target.classList.contains('server')) return;
+    editScore(team);
+  };
+
+  server.onclick = function(e) {
+    e.stopPropagation();
+    if (state.servingTeam === team) editServer();
+  };
+}
+
+function point() {
+  rememberState();
+  if (state.servingTeam === 'A') state.scoreA++;
+  else state.scoreB++;
+  render();
+  save();
+}
+
+function nextServer() {
+  if (state.serverNumber === 2) return;
+  rememberState();
+  state.serverNumber = 2;
+  render();
+  save();
+}
+
+function sideOut() {
+  rememberState();
+  state.servingTeam = state.servingTeam === 'A' ? 'B' : 'A';
+  state.serverNumber = 1;
+  render();
+  save();
+}
+
+function switchSides() {
+  rememberState();
+  state.leftTeam = state.leftTeam === 'A' ? 'B' : 'A';
+  render();
+  save();
+}
+
+function undo() {
+  if (!previousState) return;
+  const current = JSON.parse(JSON.stringify(state));
+  state = previousState;
+  previousState = current;
+  render();
+  save();
+}
+
+function resetGame() {
+  if (!confirm('Reset score to 0 - 0?')) return;
+  rememberState();
+  state = structuredClone(defaultState);
+  render();
+  save();
+}
+
+function editScore(team) {
+  const current = team === 'A' ? state.scoreA : state.scoreB;
+  const result = prompt('Enter score:', current);
+  if (result === null) return;
+
+  const newScore = parseInt(result, 10);
+  if (isNaN(newScore) || newScore < 0 || newScore > 99) return;
+
+  rememberState();
+  if (team === 'A') state.scoreA = newScore;
+  else state.scoreB = newScore;
+  render();
+  save();
+}
+
+function editServer() {
+  rememberState();
+  state.serverNumber = state.serverNumber === 1 ? 2 : 1;
+  render();
+  save();
+}
+
+render();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
