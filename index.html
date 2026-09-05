@@ -66,7 +66,7 @@
       align-items: center;
       justify-content: center;
       color: white;
-      font-size: clamp(170px, 34vw, 440px);
+      font-size: clamp(190px, 38vw, 510px);
       font-weight: 700;
       line-height: 1;
     }
@@ -74,20 +74,91 @@
     .server {
       position: absolute;
       right: 7%;
-      bottom: 6%;
+      bottom: 3%;
       color: white;
-      font-size: clamp(50px, 8vw, 105px);
+      font-size: clamp(100px, 16vw, 210px);
       font-weight: 700;
       min-width: 1em;
       text-align: right;
       cursor: pointer;
     }
 
+    .edit-arrows {
+      display: none;
+      position: absolute;
+      z-index: 5;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      color: white;
+      pointer-events: auto;
+    }
+
+    .edit-mode .edit-arrows {
+      display: flex;
+    }
+
+    .score-arrows {
+      inset: 3% 0 3% 0;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+
+    .score-arrows .edit-arrow {
+      pointer-events: auto;
+      align-self: center;
+    }
+
+    .server-arrows {
+      right: 2%;
+      bottom: 3%;
+      height: 48%;
+      justify-content: space-between;
+    }
+
+    .edit-arrow {
+      border: 0;
+      background: rgba(0,0,0,0.35);
+      color: white;
+      min-height: 52px;
+      width: 72px;
+      padding: 0;
+      border-radius: 10px;
+      font-size: 38px;
+      line-height: 1;
+    }
+
+    .undo-icon {
+      display: inline-block;
+      transform: rotate(90deg);
+    }
+
+    .edit-icon-button {
+      width: 80px;
+      height: 80px;
+      min-height: 80px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: white;
+      font-size: 44px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .edit-icon-button.active {
+      background: rgba(255,255,255,0.18);
+      border-radius: 50%;
+    }
+
     .controls {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       gap: 10px;
       margin-top: 14px;
+      margin-bottom: 18px;
     }
 
     button {
@@ -102,23 +173,79 @@
 
     button:active { transform: scale(0.99); }
 
-    .utilities {
+    .new-game-button {
       display: flex;
+      flex-direction: column;
+      align-items: center;
       justify-content: center;
-      gap: 14px;
-      margin-top: 12px;
+      line-height: 1.05;
     }
 
-    .utilities button {
-      min-height: 55px;
-      padding: 0 45px;
-      font-size: 20px;
+    .new-game-button .three-x {
+      font-size: 0.58em;
+      font-weight: normal;
+      margin-top: 5px;
+    }
+
+    .auto-controls {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto minmax(0, 1fr);
+      align-items: center;
+      gap: 18px;
+      width: 100%;
+    }
+
+    .auto-button {
+      min-height: 80px;
+      height: 80px;
+      padding: 0 24px;
+      font-size: clamp(17px, 2.5vw, 30px);
+      border-radius: 12px;
+    }
+
+    .auto-button {
+      width: 100%;
+      min-width: 110px;
+      max-width: 220px;
+      color: white;
+    }
+
+    .auto-left {
+      background: #1267d6;
+      justify-self: start;
+    }
+
+    .auto-right {
+      background: #d62828;
+    }
+
+    #leftAuto {
+      justify-self: start;
+    }
+
+    #rightAuto {
+      justify-self: end;
+    }
+
+    .undo-button {
+      width: 80px;
+      height: 80px;
+      min-height: 80px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: white;
+      font-size: 64px;
+      font-weight: normal;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     @media (max-width: 700px) {
       body { padding: 8px; }
       .scores { gap: 6px; min-height: 280px; }
-      .controls { grid-template-columns: repeat(2, 1fr); }
     }
   </style>
 </head>
@@ -129,11 +256,27 @@
     <div id="leftPanel" class="team">
       <div id="leftScore" class="score"></div>
       <div id="leftServer" class="server"></div>
+      <div class="edit-arrows score-arrows">
+        <button class="edit-arrow" onclick="adjustVisibleScore('left', 1); event.stopPropagation();" aria-label="Increase left score">▲</button>
+        <button class="edit-arrow" onclick="adjustVisibleScore('left', -1); event.stopPropagation();" aria-label="Decrease left score">▼</button>
+      </div>
+      <div id="leftServerArrows" class="edit-arrows server-arrows">
+        <button class="edit-arrow" onclick="adjustVisibleServer('left', 1); event.stopPropagation();" aria-label="Increase left server">▲</button>
+        <button class="edit-arrow" onclick="adjustVisibleServer('left', -1); event.stopPropagation();" aria-label="Decrease left server">▼</button>
+      </div>
     </div>
 
     <div id="rightPanel" class="team">
       <div id="rightScore" class="score"></div>
       <div id="rightServer" class="server"></div>
+      <div class="edit-arrows score-arrows">
+        <button class="edit-arrow" onclick="adjustVisibleScore('right', 1); event.stopPropagation();" aria-label="Increase right score">▲</button>
+        <button class="edit-arrow" onclick="adjustVisibleScore('right', -1); event.stopPropagation();" aria-label="Decrease right score">▼</button>
+      </div>
+      <div id="rightServerArrows" class="edit-arrows server-arrows">
+        <button class="edit-arrow" onclick="adjustVisibleServer('right', 1); event.stopPropagation();" aria-label="Increase right server">▲</button>
+        <button class="edit-arrow" onclick="adjustVisibleServer('right', -1); event.stopPropagation();" aria-label="Decrease right server">▼</button>
+      </div>
     </div>
   </div>
 
@@ -142,11 +285,14 @@
     <button onclick="nextServer()">NEXT SERVER</button>
     <button onclick="sideOut()">SIDE OUT</button>
     <button onclick="switchSides()">SWITCH SIDES</button>
+    <button class="new-game-button" onclick="newGamePress()"><span>NEW GAME</span><span class="three-x">Press 3x</span></button>
   </div>
 
-  <div class="utilities">
-    <button onclick="undo()">UNDO</button>
-    <button onclick="resetGame()">RESET</button>
+  <div class="auto-controls">
+    <button id="leftAuto" class="auto-button auto-left" onclick="autoRally('left')">AUTO</button>
+    <button class="undo-button" onclick="undo()" aria-label="Undo" title="Undo"><span class="undo-icon">&#8630;</span></button>
+    <button id="editButton" class="edit-icon-button" onclick="toggleEditMode()" aria-label="Edit scores and server" title="Edit">&#9998;</button>
+    <button id="rightAuto" class="auto-button auto-right" onclick="autoRally('right')">AUTO</button>
   </div>
 </div>
 
@@ -158,11 +304,14 @@ const defaultState = {
   scoreB: 0,
   servingTeam: 'A',
   serverNumber: 2,
-  leftTeam: 'A'
+  leftTeam: 'B'
 };
 
 let state = loadState();
 let previousState = null;
+let editMode = false;
+let newGamePressCount = 0;
+let newGamePressTimer = null;
 
 function loadState() {
   try {
@@ -189,6 +338,19 @@ function render() {
 
   renderTeam('leftPanel', 'leftScore', 'leftServer', leftTeam);
   renderTeam('rightPanel', 'rightScore', 'rightServer', rightTeam);
+
+  const leftAuto = document.getElementById('leftAuto');
+  const rightAuto = document.getElementById('rightAuto');
+  leftAuto.className = 'auto-button ' + (leftTeam === 'A' ? 'auto-left' : 'auto-right');
+  rightAuto.className = 'auto-button ' + (rightTeam === 'A' ? 'auto-left' : 'auto-right');
+
+  document.body.classList.toggle('edit-mode', editMode);
+  document.getElementById('editButton').classList.toggle('active', editMode);
+
+  const leftServerArrows = document.getElementById('leftServerArrows');
+  const rightServerArrows = document.getElementById('rightServerArrows');
+  leftServerArrows.style.visibility = state.servingTeam === leftTeam ? 'visible' : 'hidden';
+  rightServerArrows.style.visibility = state.servingTeam === rightTeam ? 'visible' : 'hidden';
 }
 
 function renderTeam(panelId, scoreId, serverId, team) {
@@ -201,15 +363,89 @@ function renderTeam(panelId, scoreId, serverId, team) {
   server.textContent = state.servingTeam === team ? state.serverNumber : '';
 
   panel.onclick = function(e) {
-    if (e.target.classList.contains('server')) return;
-    editScore(team);
+    if (!editMode) return;
+    if (e.target.closest('.edit-arrow') || e.target.classList.contains('server')) return;
   };
 
   server.onclick = function(e) {
     e.stopPropagation();
-    if (state.servingTeam === team) editServer();
   };
 }
+
+
+function announce(message) {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(message);
+  utterance.rate = 1;
+  utterance.pitch = 1;
+  utterance.volume = 1;
+  window.speechSynthesis.speak(utterance);
+}
+
+function autoRally(side) {
+  const leftTeam = state.leftTeam;
+  const winningTeam = side === 'left'
+    ? leftTeam
+    : (leftTeam === 'A' ? 'B' : 'A');
+
+  // Serving team won the rally: score a point and keep serving.
+  if (winningTeam === state.servingTeam) {
+    point();
+    announce('Point');
+    return;
+  }
+
+  // Receiving team won against server 1: advance to server 2.
+  if (state.serverNumber === 1) {
+    nextServer();
+    announce('Next server');
+    return;
+  }
+
+  // Receiving team won against server 2: side out.
+  sideOut();
+  announce('Side out');
+}
+
+
+function toggleEditMode() {
+  editMode = !editMode;
+  render();
+}
+
+function visibleTeam(side) {
+  if (side === 'left') return state.leftTeam;
+  return state.leftTeam === 'A' ? 'B' : 'A';
+}
+
+function adjustVisibleScore(side, delta) {
+  if (!editMode) return;
+  const team = visibleTeam(side);
+  rememberState();
+
+  if (team === 'A') {
+    state.scoreA = Math.max(0, Math.min(99, state.scoreA + delta));
+  } else {
+    state.scoreB = Math.max(0, Math.min(99, state.scoreB + delta));
+  }
+
+  render();
+  save();
+}
+
+function adjustVisibleServer(side, delta) {
+  if (!editMode) return;
+  const team = visibleTeam(side);
+  if (team !== state.servingTeam) return;
+
+  rememberState();
+  state.serverNumber = delta > 0 ? 2 : 1;
+  render();
+  save();
+}
+
+
 
 function point() {
   rememberState();
@@ -251,10 +487,29 @@ function undo() {
   save();
 }
 
+function newGamePress() {
+  newGamePressCount++;
+
+  if (newGamePressTimer) clearTimeout(newGamePressTimer);
+
+  if (newGamePressCount >= 3) {
+    newGamePressCount = 0;
+    newGamePressTimer = null;
+    resetGame();
+    return;
+  }
+
+  // Require all three presses to occur within 3 seconds.
+  newGamePressTimer = setTimeout(() => {
+    newGamePressCount = 0;
+    newGamePressTimer = null;
+  }, 3000);
+}
+
 function resetGame() {
-  if (!confirm('Reset score to 0 - 0?')) return;
   rememberState();
   state = structuredClone(defaultState);
+  editMode = false;
   render();
   save();
 }
