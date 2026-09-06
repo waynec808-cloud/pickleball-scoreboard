@@ -319,6 +319,8 @@ let previousState = null;
 let editMode = false;
 let newGamePressCount = 0;
 let newGamePressTimer = null;
+let scoreAnnouncementTimer = null;
+let gameOver = false;
 
 function loadState() {
   try {
@@ -380,39 +382,78 @@ function renderTeam(panelId, scoreId, serverId, team) {
 }
 
 
-function announce(message) {
-  if (!('speechSynthesis' in window)) return;
+function announce(message, onEnd) {
+  if (!('speechSynthesis' in window)) {
+    if (onEnd) onEnd();
+    return;
+  }
+
   window.speechSynthesis.cancel();
+
   const utterance = new SpeechSynthesisUtterance(message);
   utterance.rate = 1;
   utterance.pitch = 1;
   utterance.volume = 1;
+
+  if (onEnd) {
+    utterance.onend = onEnd;
+    utterance.onerror = onEnd;
+  }
+
   window.speechSynthesis.speak(utterance);
 }
 
+function announceCurrentScoreAfterPause() {
+  if (scoreAnnouncementTimer) {
+    clearTimeout(scoreAnnouncementTimer);
+  }
+
+  scoreAnnouncementTimer = setTimeout(() => {
+    const servingScore = state.servingTeam === 'A' ? state.scoreA : state.scoreB;
+    const receivingScore = state.servingTeam === 'A' ? state.scoreB : state.scoreA;
+    announce(`${servingScore}, ${receivingScore}, ${state.serverNumber}`);
+    scoreAnnouncementTimer = null;
+  }, 1000);
+}
+
+function announceFinalScoreAfterPause() {
+  if (scoreAnnouncementTimer) {
+    clearTimeout(scoreAnnouncementTimer);
+  }
+
+  scoreAnnouncementTimer = setTimeout(() => {
+    const winningScore = state.servingTeam === 'A' ? state.scoreA : state.scoreB;
+    const losingScore = state.servingTeam === 'A' ? state.scoreB : state.scoreA;
+    announce(`${winningScore}, ${losingScore}`);
+    scoreAnnouncementTimer = null;
+  }, 1000);
+}
+
+function isGameWinningScore() {
+  const servingScore = state.servingTeam === 'A' ? state.scoreA : state.scoreB;
+  const receivingScore = state.servingTeam === 'A' ? state.scoreB : state.scoreA;
+  return servingScore >= 11 && (servingScore - receivingScore) >= 2;
+}
+
 function autoRally(side) {
+  if (gameOver) return;
+
   const leftTeam = state.leftTeam;
   const winningTeam = side === 'left'
     ? leftTeam
     : (leftTeam === 'A' ? 'B' : 'A');
 
-  // Serving team won the rally: score a point and keep serving.
   if (winningTeam === state.servingTeam) {
     point();
-    announce('Point');
     return;
   }
 
-  // Receiving team won against server 1: advance to server 2.
   if (state.serverNumber === 1) {
     nextServer();
-    announce('Next server');
     return;
   }
 
-  // Receiving team won against server 2: side out.
   sideOut();
-  announce('Side out');
 }
 
 
@@ -455,27 +496,44 @@ function adjustVisibleServer(side, delta) {
 
 
 function point() {
+  if (gameOver) return;
+
   rememberState();
   if (state.servingTeam === 'A') state.scoreA++;
   else state.scoreB++;
   render();
   save();
+
+  if (isGameWinningScore()) {
+    gameOver = true;
+    announce('Point. Game over.', announceFinalScoreAfterPause);
+  } else {
+    announce('Point', announceCurrentScoreAfterPause);
+  }
 }
 
 function nextServer() {
+  if (gameOver) return;
   if (state.serverNumber === 2) return;
+
   rememberState();
   state.serverNumber = 2;
   render();
   save();
+
+  announce('Next server', announceCurrentScoreAfterPause);
 }
 
 function sideOut() {
+  if (gameOver) return;
+
   rememberState();
   state.servingTeam = state.servingTeam === 'A' ? 'B' : 'A';
   state.serverNumber = 1;
   render();
   save();
+
+  announce('Side out', announceCurrentScoreAfterPause);
 }
 
 function switchSides() {
@@ -490,6 +548,12 @@ function undo() {
   const current = JSON.parse(JSON.stringify(state));
   state = previousState;
   previousState = current;
+  gameOver = false;
+  if (scoreAnnouncementTimer) {
+    clearTimeout(scoreAnnouncementTimer);
+    scoreAnnouncementTimer = null;
+  }
+  window.speechSynthesis?.cancel();
   render();
   save();
 }
@@ -517,6 +581,11 @@ function resetGame() {
   rememberState();
   state = structuredClone(defaultState);
   editMode = false;
+  gameOver = false;
+  if (scoreAnnouncementTimer) {
+    clearTimeout(scoreAnnouncementTimer);
+    scoreAnnouncementTimer = null;
+  }
   render();
   save();
 }
