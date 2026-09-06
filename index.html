@@ -153,6 +153,48 @@
       border-radius: 50%;
     }
 
+    .sound-icon-button {
+      width: 80px;
+      height: 80px;
+      min-height: 80px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: white;
+      font-size: 40px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sound-icon-button.muted {
+      background: rgba(255,255,255,0.18);
+      border-radius: 50%;
+    }
+
+    .speaker-svg {
+      width: 42px;
+      height: 42px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .sound-icon-button .mute-line {
+      display: none;
+    }
+
+    .sound-icon-button.muted .sound-wave {
+      display: none;
+    }
+
+    .sound-icon-button.muted .mute-line {
+      display: block;
+    }
+
     .controls {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
@@ -196,7 +238,7 @@
 
     .auto-controls {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto auto minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1fr) auto auto auto minmax(0, 1fr);
       align-items: center;
       gap: 18px;
       width: 100%;
@@ -298,6 +340,14 @@
   <div class="auto-controls">
     <button id="leftAuto" class="auto-button auto-left" onclick="autoRally('left')">AUTO</button>
     <button class="undo-button" onclick="undo()" aria-label="Undo" title="Undo"><span class="undo-icon">&#8630;</span></button>
+    <button id="soundButton" class="sound-icon-button" onclick="toggleSound()" aria-label="Turn sound off" title="Sound on">
+      <svg class="speaker-svg" viewBox="0 0 32 32" aria-hidden="true">
+        <path d="M5 13h6l7-6v18l-7-6H5z"></path>
+        <path class="sound-wave wave-1" d="M22 12c2 2 2 6 0 8"></path>
+        <path class="sound-wave wave-2" d="M25 9c4 4 4 10 0 14"></path>
+        <path class="mute-line" d="M22 12l7 8M29 12l-7 8"></path>
+      </svg>
+    </button>
     <button id="editButton" class="edit-icon-button" onclick="toggleEditMode()" aria-label="Edit scores and server" title="Edit">&#9998;</button>
     <button id="rightAuto" class="auto-button auto-right" onclick="autoRally('right')">AUTO</button>
   </div>
@@ -321,6 +371,7 @@ let newGamePressCount = 0;
 let newGamePressTimer = null;
 let scoreAnnouncementTimer = null;
 let gameOver = false;
+let soundEnabled = true;
 
 function loadState() {
   try {
@@ -356,6 +407,11 @@ function render() {
   document.body.classList.toggle('edit-mode', editMode);
   document.getElementById('editButton').classList.toggle('active', editMode);
 
+  const soundButton = document.getElementById('soundButton');
+  soundButton.classList.toggle('muted', !soundEnabled);
+  soundButton.setAttribute('aria-label', soundEnabled ? 'Turn sound off' : 'Turn sound on');
+  soundButton.title = soundEnabled ? 'Sound on' : 'Sound off';
+
   const leftServerArrows = document.getElementById('leftServerArrows');
   const rightServerArrows = document.getElementById('rightServerArrows');
   leftServerArrows.style.visibility = state.servingTeam === leftTeam ? 'visible' : 'hidden';
@@ -383,7 +439,7 @@ function renderTeam(panelId, scoreId, serverId, team) {
 
 
 function announce(message, onEnd) {
-  if (!('speechSynthesis' in window)) {
+  if (!soundEnabled || !('speechSynthesis' in window)) {
     if (onEnd) onEnd();
     return;
   }
@@ -456,6 +512,22 @@ function autoRally(side) {
   sideOut();
 }
 
+
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+
+  if (!soundEnabled) {
+    if (scoreAnnouncementTimer) {
+      clearTimeout(scoreAnnouncementTimer);
+      scoreAnnouncementTimer = null;
+    }
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+  }
+
+  render();
+}
 
 function toggleEditMode() {
   editMode = !editMode;
