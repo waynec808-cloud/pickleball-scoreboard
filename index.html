@@ -46,7 +46,8 @@
       gap: 10px;
       height: calc(68vh + 40px);
       min-height: 440px;
-    }
+      position: relative;
+}
 
     .team {
       flex: 1;
@@ -238,7 +239,7 @@
 
     .auto-controls {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto auto auto minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1fr) auto auto auto auto minmax(0, 1fr);
       align-items: center;
       gap: 18px;
       width: 100%;
@@ -296,6 +297,184 @@
       body { padding: 8px; }
       .scores { gap: 6px; min-height: 280px; }
     }
+  
+    .switch-sides-icon {
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+      width: 108px;
+      height: 108px;
+      padding: 3px;
+      border: 0;
+      background: transparent;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .switch-sides-icon svg {
+      width: 92px;
+      height: 92px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .new-game-icon-button {
+      width: 80px;
+      height: 80px;
+      min-height: 80px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .new-game-svg {
+      width: 42px;
+      height: 42px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+  
+    /* v2.21 control layout */
+    .icon-controls {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 10px;
+      height: 70px;
+      margin-top: 2px;
+    }
+    .labeled-icon-button {
+      position: relative;
+      width: 72px !important;
+      height: 58px !important;
+      min-height: 58px !important;
+      padding: 0 0 15px !important;
+      border: 0 !important;
+      background: transparent !important;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: visible;
+    }
+    .labeled-icon-button .undo-icon,
+    .labeled-icon-button .edit-glyph {
+      font-size: 38px;
+      line-height: 1;
+    }
+    .labeled-icon-button .speaker-svg,
+    .labeled-icon-button .new-game-svg {
+      width: 38px;
+      height: 38px;
+    }
+    .icon-label {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      text-align: center;
+      font-size: 10px;
+      line-height: 1;
+      font-weight: 500;
+      color: rgba(255,255,255,.9);
+      pointer-events: none;
+    }
+    .auto-controls {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr !important;
+      gap: 10px !important;
+      align-items: center;
+      width: 100%;
+      height: 80px;
+      margin-top: 10px;
+    }
+    .auto-button {
+      width: 100% !important;
+      max-width: none !important;
+      min-width: 0 !important;
+      height: 80px !important;
+      min-height: 80px !important;
+      justify-self: stretch !important;
+      font-size: clamp(18px, 2.5vw, 30px) !important;
+    }
+
+  
+    /* v2.22 sizing refinements */
+    .auto-controls {
+      display: flex !important;
+      justify-content: space-between !important;
+      gap: 0 !important;
+      width: 100%;
+    }
+
+    .auto-button {
+      width: 33.333% !important;
+      max-width: 33.333% !important;
+      flex: 0 0 33.333% !important;
+    }
+
+    #leftAuto {
+      justify-self: auto !important;
+      margin-left: 0 !important;
+    }
+
+    #rightAuto {
+      justify-self: auto !important;
+      margin-right: 0 !important;
+    }
+
+    .icon-controls {
+      gap: 14px;
+    }
+
+    .labeled-icon-button {
+      width: 80px !important;
+      height: 64px !important;
+      min-height: 64px !important;
+      padding-bottom: 15px !important;
+    }
+
+    .labeled-icon-button .undo-icon,
+    .labeled-icon-button .edit-glyph {
+      font-size: 44px;
+    }
+
+    .labeled-icon-button .speaker-svg,
+    .labeled-icon-button .new-game-svg {
+      width: 44px;
+      height: 44px;
+    }
+
+    .icon-label {
+      font-size: 11px;
+    }
+
+  
+    /* v2.25 edit-arrow positioning refinements */
+    .score-arrows {
+      inset: 11% 0 11% 0;
+    }
+
+    .server-arrows {
+      right: 1.5%;
+      bottom: 1%;
+      height: 25%;
+      justify-content: space-between;
+    }
+
   </style>
 </head>
 
@@ -314,8 +493,15 @@
         <button class="edit-arrow" onclick="adjustVisibleServer('left', -1); event.stopPropagation();" aria-label="Decrease left server">▼</button>
       </div>
     </div>
-
-    <div id="rightPanel" class="team">
+      <button class="switch-sides-icon" onclick="switchSides()" aria-label="Switch sides" title="Switch sides">
+        <svg viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M9 20a15 12 0 0 1 26-6"></path>
+          <path d="M35 9v6h-6"></path>
+          <path d="M39 28a15 12 0 0 1-26 6"></path>
+          <path d="M13 39v-6h6"></path>
+        </svg>
+      </button>
+<div id="rightPanel" class="team">
       <div id="rightScore" class="score"></div>
       <div id="rightServer" class="server"></div>
       <div class="edit-arrows score-arrows">
@@ -328,28 +514,34 @@
       </div>
     </div>
   </div>
-
-  <div class="controls">
-    <button onclick="point()">POINT</button>
-    <button onclick="nextServer()">NEXT SERVER</button>
-    <button onclick="sideOut()">SIDE OUT</button>
-    <button onclick="switchSides()">SWITCH SIDES</button>
-    <button class="new-game-button" onclick="newGamePress()"><span>NEW GAME</span><span class="three-x">Press 3x</span></button>
-  </div>
-
-  <div class="auto-controls">
-    <button id="leftAuto" class="auto-button auto-left" onclick="autoRally('left')">AUTO<br>SCORE</button>
-    <button class="undo-button" onclick="undo()" aria-label="Undo" title="Undo"><span class="undo-icon">&#8630;</span></button>
-    <button id="soundButton" class="sound-icon-button" onclick="toggleSound()" aria-label="Turn sound off" title="Sound on">
+  <div class="icon-controls">
+    <button class="labeled-icon-button undo-button" onclick="undo()" aria-label="Undo" title="Undo">
+      <span class="undo-icon">&#8630;</span><span class="icon-label">Undo</span>
+    </button>
+    <button id="soundButton" class="labeled-icon-button sound-icon-button" onclick="toggleSound()" aria-label="Turn sound off" title="Sound on">
       <svg class="speaker-svg" viewBox="0 0 32 32" aria-hidden="true">
         <path d="M5 13h6l7-6v18l-7-6H5z"></path>
         <path class="sound-wave wave-1" d="M22 12c2 2 2 6 0 8"></path>
         <path class="sound-wave wave-2" d="M25 9c4 4 4 10 0 14"></path>
         <path class="mute-line" d="M22 12l7 8M29 12l-7 8"></path>
       </svg>
+      <span class="icon-label">Sound</span>
     </button>
-    <button id="editButton" class="edit-icon-button" onclick="toggleEditMode()" aria-label="Edit scores and server" title="Edit">&#9998;</button>
-    <button id="rightAuto" class="auto-button auto-right" onclick="autoRally('right')">AUTO<br>SCORE</button>
+    <button id="editButton" class="labeled-icon-button edit-icon-button" onclick="toggleEditMode()" aria-label="Edit scores and server" title="Edit">
+      <span class="edit-glyph">&#9998;</span><span class="icon-label">Edit</span>
+    </button>
+    <button class="labeled-icon-button new-game-icon-button" onclick="resetGame()" aria-label="Reset game" title="Reset">
+      <svg class="new-game-svg" viewBox="0 0 32 32" aria-hidden="true">
+        <path d="M25 9v7h-7"></path>
+        <path d="M25 16a10 10 0 1 0-2.9 7.1"></path>
+      </svg>
+      <span class="icon-label">Reset</span>
+    </button>
+  </div>
+
+  <div class="auto-controls">
+    <button id="leftAuto" class="auto-button auto-left" onclick="autoRally('left')">AUTO SCORE</button>
+    <button id="rightAuto" class="auto-button auto-right" onclick="autoRally('right')">AUTO SCORE</button>
   </div>
 </div>
 
@@ -367,8 +559,6 @@ const defaultState = {
 let state = loadState();
 let previousState = null;
 let editMode = false;
-let newGamePressCount = 0;
-let newGamePressTimer = null;
 let scoreAnnouncementTimer = null;
 let gameOver = false;
 let soundEnabled = true;
@@ -560,7 +750,22 @@ function adjustVisibleServer(side, delta) {
   if (team !== state.servingTeam) return;
 
   rememberState();
-  state.serverNumber = delta > 0 ? 2 : 1;
+
+  if (delta > 0) {
+    // Increase server number: 1 -> 2. If already 2, leave it at 2.
+    state.serverNumber = Math.min(2, state.serverNumber + 1);
+  } else {
+    if (state.serverNumber === 2) {
+      // 2 -> 1 on the same serving team.
+      state.serverNumber = 1;
+    } else {
+      // Going down from server 1 means a side out:
+      // the other team becomes the serving team at server 1.
+      state.servingTeam = state.servingTeam === 'A' ? 'B' : 'A';
+      state.serverNumber = 1;
+    }
+  }
+
   render();
   save();
 }
@@ -630,34 +835,20 @@ function undo() {
   save();
 }
 
-function newGamePress() {
-  newGamePressCount++;
-
-  if (newGamePressTimer) clearTimeout(newGamePressTimer);
-
-  if (newGamePressCount >= 3) {
-    newGamePressCount = 0;
-    newGamePressTimer = null;
-    resetGame();
-    return;
-  }
-
-  // Require all three presses to occur within 3 seconds.
-  newGamePressTimer = setTimeout(() => {
-    newGamePressCount = 0;
-    newGamePressTimer = null;
-  }, 3000);
-}
-
 function resetGame() {
-  rememberState();
-  state = structuredClone(defaultState);
-  editMode = false;
-  gameOver = false;
   if (scoreAnnouncementTimer) {
     clearTimeout(scoreAnnouncementTimer);
     scoreAnnouncementTimer = null;
   }
+
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
+
+  state = { ...defaultState };
+  previousState = null;
+  editMode = false;
+  gameOver = false;
   render();
   save();
 }
