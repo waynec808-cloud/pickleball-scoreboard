@@ -1,4 +1,4 @@
-const CACHE = 'pickleball-scoreboard-v3';
+const CACHE = 'pickleball-scoreboard-v3-1';
 
 const ASSETS = [
   './manifest.json',
@@ -26,38 +26,33 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
+// Network-first for the app page so new index.html versions update
+// automatically when online. If offline, use the last cached copy.
 self.addEventListener('fetch', event => {
   const request = event.request;
 
-  // For the app page, try the internet first.
-  // If offline, use the last cached index.html.
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
         .then(response => {
           const copy = response.clone();
-          caches.open(CACHE).then(cache =>
-            cache.put('./index.html', copy)
-          );
+          caches.open(CACHE).then(cache => cache.put('./index.html', copy));
           return response;
         })
         .catch(() =>
-          caches.match('./index.html')
+          caches.match('./index.html').then(cached => cached || caches.match('./'))
         )
     );
     return;
   }
 
-  // Other files remain cache-first.
   event.respondWith(
     caches.match(request).then(cached => {
       if (cached) return cached;
 
       return fetch(request).then(response => {
         const copy = response.clone();
-        caches.open(CACHE).then(cache =>
-          cache.put(request, copy)
-        );
+        caches.open(CACHE).then(cache => cache.put(request, copy));
         return response;
       });
     })

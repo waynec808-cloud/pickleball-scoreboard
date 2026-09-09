@@ -182,6 +182,7 @@
       stroke-width: 2.2;
       stroke-linecap: round;
       stroke-linejoin: round;
+      pointer-events: none;
     }
 
     .sound-icon-button .mute-line {
@@ -313,6 +314,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
     }
 
     .switch-sides-icon svg {
@@ -323,6 +326,7 @@
       stroke-width: 2.6;
       stroke-linecap: round;
       stroke-linejoin: round;
+      pointer-events: none;
     }
 
     .new-game-icon-button {
@@ -493,7 +497,7 @@
         <button class="edit-arrow" onclick="adjustVisibleServer('left', -1); event.stopPropagation();" aria-label="Decrease left server">▼</button>
       </div>
     </div>
-      <button class="switch-sides-icon" onclick="switchSides()" aria-label="Switch sides" title="Switch sides">
+      <button id="switchSidesButton" class="switch-sides-icon" aria-label="Switch sides" title="Switch sides">
         <svg viewBox="0 0 48 48" aria-hidden="true">
           <path d="M9 20a15 12 0 0 1 26-6"></path>
           <path d="M35 9v6h-6"></path>
@@ -540,8 +544,8 @@
   </div>
 
   <div class="auto-controls">
-    <button id="leftAuto" class="auto-button auto-left" onclick="autoRally('left')">AUTO SCORE</button>
-    <button id="rightAuto" class="auto-button auto-right" onclick="autoRally('right')">AUTO SCORE</button>
+    <button id="leftAuto" class="auto-button auto-left" onclick="autoRally('left')">WINS RALLY</button>
+    <button id="rightAuto" class="auto-button auto-right" onclick="autoRally('right')">WINS RALLY</button>
   </div>
 </div>
 
@@ -819,6 +823,14 @@ function switchSides() {
   render();
   save();
 }
+
+// v3.1: respond on the initial iPad pointer press instead of waiting for click.
+// preventDefault suppresses the follow-up synthetic click so one press = one switch.
+const switchSidesButton = document.getElementById('switchSidesButton');
+switchSidesButton.addEventListener('pointerdown', function(event) {
+  event.preventDefault();
+  switchSides();
+});
 
 function undo() {
   if (!previousState) return;
