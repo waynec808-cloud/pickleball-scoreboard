@@ -1,4 +1,4 @@
-const CACHE = 'pickleball-scoreboard-v3-1';
+const CACHE = 'pickleball-scoreboard-v3-3';
 
 const ASSETS = [
   './manifest.json',

@@ -522,14 +522,23 @@
     <button class="labeled-icon-button undo-button" onclick="undo()" aria-label="Undo" title="Undo">
       <span class="undo-icon">&#8630;</span><span class="icon-label">Undo</span>
     </button>
-    <button id="soundButton" class="labeled-icon-button sound-icon-button" onclick="toggleSound()" aria-label="Turn sound off" title="Sound on">
+    <button id="pointsSoundButton" class="labeled-icon-button sound-icon-button" onclick="togglePointsSound()" aria-label="Turn point announcements off" title="Points on">
       <svg class="speaker-svg" viewBox="0 0 32 32" aria-hidden="true">
         <path d="M5 13h6l7-6v18l-7-6H5z"></path>
         <path class="sound-wave wave-1" d="M22 12c2 2 2 6 0 8"></path>
         <path class="sound-wave wave-2" d="M25 9c4 4 4 10 0 14"></path>
         <path class="mute-line" d="M22 12l7 8M29 12l-7 8"></path>
       </svg>
-      <span class="icon-label">Sound</span>
+      <span class="icon-label">Points</span>
+    </button>
+    <button id="scoreSoundButton" class="labeled-icon-button sound-icon-button" onclick="toggleScoreSound()" aria-label="Turn score announcements off" title="Score on">
+      <svg class="speaker-svg" viewBox="0 0 32 32" aria-hidden="true">
+        <path d="M5 13h6l7-6v18l-7-6H5z"></path>
+        <path class="sound-wave wave-1" d="M22 12c2 2 2 6 0 8"></path>
+        <path class="sound-wave wave-2" d="M25 9c4 4 4 10 0 14"></path>
+        <path class="mute-line" d="M22 12l7 8M29 12l-7 8"></path>
+      </svg>
+      <span class="icon-label">Score</span>
     </button>
     <button id="editButton" class="labeled-icon-button edit-icon-button" onclick="toggleEditMode()" aria-label="Edit scores and server" title="Edit">
       <span class="edit-glyph">&#9998;</span><span class="icon-label">Edit</span>
@@ -565,7 +574,8 @@ let previousState = null;
 let editMode = false;
 let scoreAnnouncementTimer = null;
 let gameOver = false;
-let soundEnabled = true;
+let pointsSoundEnabled = true;
+let scoreSoundEnabled = true;
 
 function loadState() {
   try {
@@ -601,10 +611,15 @@ function render() {
   document.body.classList.toggle('edit-mode', editMode);
   document.getElementById('editButton').classList.toggle('active', editMode);
 
-  const soundButton = document.getElementById('soundButton');
-  soundButton.classList.toggle('muted', !soundEnabled);
-  soundButton.setAttribute('aria-label', soundEnabled ? 'Turn sound off' : 'Turn sound on');
-  soundButton.title = soundEnabled ? 'Sound on' : 'Sound off';
+  const pointsSoundButton = document.getElementById('pointsSoundButton');
+  pointsSoundButton.classList.toggle('muted', !pointsSoundEnabled);
+  pointsSoundButton.setAttribute('aria-label', pointsSoundEnabled ? 'Turn point announcements off' : 'Turn point announcements on');
+  pointsSoundButton.title = pointsSoundEnabled ? 'Points on' : 'Points off';
+
+  const scoreSoundButton = document.getElementById('scoreSoundButton');
+  scoreSoundButton.classList.toggle('muted', !scoreSoundEnabled);
+  scoreSoundButton.setAttribute('aria-label', scoreSoundEnabled ? 'Turn score announcements off' : 'Turn score announcements on');
+  scoreSoundButton.title = scoreSoundEnabled ? 'Score on' : 'Score off';
 
   const leftServerArrows = document.getElementById('leftServerArrows');
   const rightServerArrows = document.getElementById('rightServerArrows');
@@ -633,7 +648,7 @@ function renderTeam(panelId, scoreId, serverId, team) {
 
 
 function announce(message, onEnd) {
-  if (!soundEnabled || !('speechSynthesis' in window)) {
+  if (!('speechSynthesis' in window)) {
     if (onEnd) onEnd();
     return;
   }
@@ -653,7 +668,20 @@ function announce(message, onEnd) {
   window.speechSynthesis.speak(utterance);
 }
 
+function announcePointEvent(message, scoreCallback) {
+  // If Score is off, do not create the delayed score callback at all.
+  const afterEvent = scoreSoundEnabled ? scoreCallback : null;
+
+  if (pointsSoundEnabled) {
+    announce(message, afterEvent);
+  } else if (afterEvent) {
+    afterEvent();
+  }
+}
+
 function announceCurrentScoreAfterPause() {
+  if (!scoreSoundEnabled) return;
+
   if (scoreAnnouncementTimer) {
     clearTimeout(scoreAnnouncementTimer);
   }
@@ -667,6 +695,8 @@ function announceCurrentScoreAfterPause() {
 }
 
 function announceFinalScoreAfterPause() {
+  if (!scoreSoundEnabled) return;
+
   if (scoreAnnouncementTimer) {
     clearTimeout(scoreAnnouncementTimer);
   }
@@ -707,17 +737,18 @@ function autoRally(side) {
 }
 
 
-function toggleSound() {
-  soundEnabled = !soundEnabled;
+function togglePointsSound() {
+  pointsSoundEnabled = !pointsSoundEnabled;
+  render();
+}
 
-  if (!soundEnabled) {
-    if (scoreAnnouncementTimer) {
-      clearTimeout(scoreAnnouncementTimer);
-      scoreAnnouncementTimer = null;
-    }
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-    }
+function toggleScoreSound() {
+  scoreSoundEnabled = !scoreSoundEnabled;
+
+  // Turning Score off also removes any pending score-announcement delay.
+  if (!scoreSoundEnabled && scoreAnnouncementTimer) {
+    clearTimeout(scoreAnnouncementTimer);
+    scoreAnnouncementTimer = null;
   }
 
   render();
@@ -756,17 +787,22 @@ function adjustVisibleServer(side, delta) {
   rememberState();
 
   if (delta > 0) {
-    // Increase server number: 1 -> 2. If already 2, leave it at 2.
-    state.serverNumber = Math.min(2, state.serverNumber + 1);
-  } else {
-    if (state.serverNumber === 2) {
-      // 2 -> 1 on the same serving team.
-      state.serverNumber = 1;
+    if (state.serverNumber === 1) {
+      // Up: server 1 -> server 2 on the same team.
+      state.serverNumber = 2;
     } else {
-      // Going down from server 1 means a side out:
-      // the other team becomes the serving team at server 1.
+      // Up from server 2: jump to the other team at server 1.
       state.servingTeam = state.servingTeam === 'A' ? 'B' : 'A';
       state.serverNumber = 1;
+    }
+  } else {
+    if (state.serverNumber === 2) {
+      // Down: server 2 -> server 1 on the same team.
+      state.serverNumber = 1;
+    } else {
+      // Down from server 1: jump to the other team at server 2.
+      state.servingTeam = state.servingTeam === 'A' ? 'B' : 'A';
+      state.serverNumber = 2;
     }
   }
 
@@ -787,9 +823,9 @@ function point() {
 
   if (isGameWinningScore()) {
     gameOver = true;
-    announce('Point. Game over.', announceFinalScoreAfterPause);
+    announcePointEvent('Point. Game over.', announceFinalScoreAfterPause);
   } else {
-    announce('Point', announceCurrentScoreAfterPause);
+    announcePointEvent('Point', announceCurrentScoreAfterPause);
   }
 }
 
@@ -802,7 +838,7 @@ function nextServer() {
   render();
   save();
 
-  announce('Next server', announceCurrentScoreAfterPause);
+  announcePointEvent('Next server', announceCurrentScoreAfterPause);
 }
 
 function sideOut() {
@@ -814,7 +850,7 @@ function sideOut() {
   render();
   save();
 
-  announce('Side out', announceCurrentScoreAfterPause);
+  announcePointEvent('Side out', announceCurrentScoreAfterPause);
 }
 
 function switchSides() {
