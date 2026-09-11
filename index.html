@@ -396,6 +396,21 @@
       color: rgba(255,255,255,.9);
       pointer-events: none;
     }
+    .scoring-mode-button {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .scoring-mode-value {
+      font-size: 22px;
+      line-height: 1;
+      font-weight: 800;
+      letter-spacing: .3px;
+    }
+
+    .scoring-mode-button.rally-mode .scoring-mode-value {
+      font-size: 17px;
+    }
+
     .auto-controls {
       display: grid !important;
       grid-template-columns: 1fr 1fr !important;
@@ -540,6 +555,9 @@
       </svg>
       <span class="icon-label">Score</span>
     </button>
+    <button id="scoringModeButton" class="labeled-icon-button scoring-mode-button" onclick="toggleScoringMode()" aria-label="Switch to rally scoring" title="Standard scoring">
+      <span id="scoringModeValue" class="scoring-mode-value">STD</span><span class="icon-label">Scoring</span>
+    </button>
     <button id="editButton" class="labeled-icon-button edit-icon-button" onclick="toggleEditMode()" aria-label="Edit scores and server" title="Edit">
       <span class="edit-glyph">&#9998;</span><span class="icon-label">Edit</span>
     </button>
@@ -560,6 +578,7 @@
 
 <script>
 const STORAGE_KEY = 'pickleballScoreboardStateV1';
+const SCORING_MODE_KEY = 'pickleballScoreboardScoringModeV1';
 
 const defaultState = {
   scoreA: 0,
@@ -576,6 +595,10 @@ let scoreAnnouncementTimer = null;
 let gameOver = false;
 let pointsSoundEnabled = true;
 let scoreSoundEnabled = true;
+let scoringMode = localStorage.getItem(SCORING_MODE_KEY) === 'rally' ? 'rally' : 'standard';
+
+// Rally scoring always uses server 1.
+if (scoringMode === 'rally') state.serverNumber = 1;
 
 function loadState() {
   try {
@@ -621,10 +644,19 @@ function render() {
   scoreSoundButton.setAttribute('aria-label', scoreSoundEnabled ? 'Turn score announcements off' : 'Turn score announcements on');
   scoreSoundButton.title = scoreSoundEnabled ? 'Score on' : 'Score off';
 
+  const scoringModeButton = document.getElementById('scoringModeButton');
+  const scoringModeValue = document.getElementById('scoringModeValue');
+  const isRally = scoringMode === 'rally';
+  scoringModeValue.textContent = isRally ? 'RALLY' : 'STD';
+  scoringModeButton.classList.toggle('rally-mode', isRally);
+  scoringModeButton.setAttribute('aria-label', isRally ? 'Switch to standard scoring' : 'Switch to rally scoring');
+  scoringModeButton.title = isRally ? 'Rally scoring' : 'Standard scoring';
+
   const leftServerArrows = document.getElementById('leftServerArrows');
   const rightServerArrows = document.getElementById('rightServerArrows');
-  leftServerArrows.style.visibility = state.servingTeam === leftTeam ? 'visible' : 'hidden';
-  rightServerArrows.style.visibility = state.servingTeam === rightTeam ? 'visible' : 'hidden';
+  const showServerArrows = editMode;
+  leftServerArrows.style.visibility = showServerArrows && state.servingTeam === leftTeam ? 'visible' : 'hidden';
+  rightServerArrows.style.visibility = showServerArrows && state.servingTeam === rightTeam ? 'visible' : 'hidden';
 }
 
 function renderTeam(panelId, scoreId, serverId, team) {
@@ -723,6 +755,11 @@ function autoRally(side) {
     ? leftTeam
     : (leftTeam === 'A' ? 'B' : 'A');
 
+  if (scoringMode === 'rally') {
+    rallyPoint(winningTeam);
+    return;
+  }
+
   if (winningTeam === state.servingTeam) {
     point();
     return;
@@ -749,6 +786,18 @@ function toggleScoreSound() {
   if (!scoreSoundEnabled && scoreAnnouncementTimer) {
     clearTimeout(scoreAnnouncementTimer);
     scoreAnnouncementTimer = null;
+  }
+
+  render();
+}
+
+function toggleScoringMode() {
+  scoringMode = scoringMode === 'standard' ? 'rally' : 'standard';
+  localStorage.setItem(SCORING_MODE_KEY, scoringMode);
+
+  if (scoringMode === 'rally') {
+    state.serverNumber = 1;
+    save();
   }
 
   render();
@@ -786,6 +835,15 @@ function adjustVisibleServer(side, delta) {
 
   rememberState();
 
+  if (scoringMode === 'rally') {
+    // Rally scoring always uses server 1. Either arrow corrects the serving team.
+    state.servingTeam = state.servingTeam === 'A' ? 'B' : 'A';
+    state.serverNumber = 1;
+    render();
+    save();
+    return;
+  }
+
   if (delta > 0) {
     if (state.serverNumber === 1) {
       // Up: server 1 -> server 2 on the same team.
@@ -811,6 +869,27 @@ function adjustVisibleServer(side, delta) {
 }
 
 
+
+function rallyPoint(winningTeam) {
+  if (gameOver) return;
+
+  rememberState();
+  if (winningTeam === 'A') state.scoreA++;
+  else state.scoreB++;
+
+  // In rally scoring, the rally winner serves next and there is only server 1.
+  state.servingTeam = winningTeam;
+  state.serverNumber = 1;
+  render();
+  save();
+
+  if (isGameWinningScore()) {
+    gameOver = true;
+    announcePointEvent('Point. Game over.', announceFinalScoreAfterPause);
+  } else {
+    announcePointEvent('Point', announceCurrentScoreAfterPause);
+  }
+}
 
 function point() {
   if (gameOver) return;
@@ -894,6 +973,7 @@ function resetGame() {
   }
 
   state = { ...defaultState };
+  if (scoringMode === 'rally') state.serverNumber = 1;
   previousState = null;
   editMode = false;
   gameOver = false;
