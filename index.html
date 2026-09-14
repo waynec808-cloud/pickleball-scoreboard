@@ -301,7 +301,7 @@
   
     .switch-sides-icon {
       position: absolute;
-      top: 8px;
+      bottom: 8px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 5;
@@ -494,6 +494,17 @@
       justify-content: space-between;
     }
 
+
+    /* v3.5 Settings panel */
+    .settings-overlay { display:none; position:fixed; inset:0; z-index:50; background:rgba(0,0,0,.55); align-items:center; justify-content:center; }
+    .settings-overlay.open { display:flex; }
+    .settings-panel { width:min(420px,88vw); background:#242424; color:white; border-radius:18px; padding:22px; box-shadow:0 12px 40px rgba(0,0,0,.45); }
+    .settings-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; font-size:24px; font-weight:700; }
+    .settings-close { min-height:44px; width:44px; height:44px; padding:0; background:transparent; color:white; font-size:30px; font-weight:400; }
+    .setting-row { display:flex; align-items:center; justify-content:space-between; gap:18px; padding:14px 0; border-top:1px solid rgba(255,255,255,.15); font-size:19px; }
+    .setting-control { min-height:46px; padding:0 16px; background:#444; color:white; border-radius:10px; font-size:16px; min-width:110px; }
+    .setting-control.on { background:#1267d6; }
+    .settings-glyph { font-size:38px; line-height:1; }
   </style>
 </head>
 
@@ -537,26 +548,8 @@
     <button class="labeled-icon-button undo-button" onclick="undo()" aria-label="Undo" title="Undo">
       <span class="undo-icon">&#8630;</span><span class="icon-label">Undo</span>
     </button>
-    <button id="pointsSoundButton" class="labeled-icon-button sound-icon-button" onclick="togglePointsSound()" aria-label="Turn point announcements off" title="Points on">
-      <svg class="speaker-svg" viewBox="0 0 32 32" aria-hidden="true">
-        <path d="M5 13h6l7-6v18l-7-6H5z"></path>
-        <path class="sound-wave wave-1" d="M22 12c2 2 2 6 0 8"></path>
-        <path class="sound-wave wave-2" d="M25 9c4 4 4 10 0 14"></path>
-        <path class="mute-line" d="M22 12l7 8M29 12l-7 8"></path>
-      </svg>
-      <span class="icon-label">Points</span>
-    </button>
-    <button id="scoreSoundButton" class="labeled-icon-button sound-icon-button" onclick="toggleScoreSound()" aria-label="Turn score announcements off" title="Score on">
-      <svg class="speaker-svg" viewBox="0 0 32 32" aria-hidden="true">
-        <path d="M5 13h6l7-6v18l-7-6H5z"></path>
-        <path class="sound-wave wave-1" d="M22 12c2 2 2 6 0 8"></path>
-        <path class="sound-wave wave-2" d="M25 9c4 4 4 10 0 14"></path>
-        <path class="mute-line" d="M22 12l7 8M29 12l-7 8"></path>
-      </svg>
-      <span class="icon-label">Score</span>
-    </button>
-    <button id="scoringModeButton" class="labeled-icon-button scoring-mode-button" onclick="toggleScoringMode()" aria-label="Switch to rally scoring" title="Standard scoring">
-      <span id="scoringModeValue" class="scoring-mode-value">STD</span><span class="icon-label">Scoring</span>
+    <button id="settingsButton" class="labeled-icon-button" onclick="openSettings()" aria-label="Settings" title="Settings">
+      <span class="settings-glyph">⚙︎</span><span class="icon-label">Settings</span>
     </button>
     <button id="editButton" class="labeled-icon-button edit-icon-button" onclick="toggleEditMode()" aria-label="Edit scores and server" title="Edit">
       <span class="edit-glyph">&#9998;</span><span class="icon-label">Edit</span>
@@ -571,8 +564,17 @@
   </div>
 
   <div class="auto-controls">
-    <button id="leftAuto" class="auto-button auto-left" onclick="autoRally('left')">WINS RALLY</button>
-    <button id="rightAuto" class="auto-button auto-right" onclick="autoRally('right')">WINS RALLY</button>
+    <button id="leftAuto" class="auto-button auto-left" onclick="autoRally('left')">AUTO SCORE</button>
+    <button id="rightAuto" class="auto-button auto-right" onclick="autoRally('right')">AUTO SCORE</button>
+  </div>
+</div>
+
+<div id="settingsOverlay" class="settings-overlay" onclick="closeSettingsFromBackdrop(event)">
+  <div class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="settings-header"><span id="settingsTitle">Settings</span><button class="settings-close" onclick="closeSettings()" aria-label="Close settings">×</button></div>
+    <div class="setting-row"><span>Point audio</span><button id="pointsSoundButton" class="setting-control" onclick="togglePointsSound()">ON</button></div>
+    <div class="setting-row"><span>Score audio</span><button id="scoreSoundButton" class="setting-control" onclick="toggleScoreSound()">ON</button></div>
+    <div class="setting-row"><span>Scoring method</span><button id="scoringModeButton" class="setting-control" onclick="toggleScoringMode()"><span id="scoringModeValue">STANDARD</span></button></div>
   </div>
 </div>
 
@@ -635,22 +637,20 @@ function render() {
   document.getElementById('editButton').classList.toggle('active', editMode);
 
   const pointsSoundButton = document.getElementById('pointsSoundButton');
-  pointsSoundButton.classList.toggle('muted', !pointsSoundEnabled);
+  pointsSoundButton.textContent = pointsSoundEnabled ? 'ON' : 'OFF';
+  pointsSoundButton.classList.toggle('on', pointsSoundEnabled);
   pointsSoundButton.setAttribute('aria-label', pointsSoundEnabled ? 'Turn point announcements off' : 'Turn point announcements on');
-  pointsSoundButton.title = pointsSoundEnabled ? 'Points on' : 'Points off';
 
   const scoreSoundButton = document.getElementById('scoreSoundButton');
-  scoreSoundButton.classList.toggle('muted', !scoreSoundEnabled);
+  scoreSoundButton.textContent = scoreSoundEnabled ? 'ON' : 'OFF';
+  scoreSoundButton.classList.toggle('on', scoreSoundEnabled);
   scoreSoundButton.setAttribute('aria-label', scoreSoundEnabled ? 'Turn score announcements off' : 'Turn score announcements on');
-  scoreSoundButton.title = scoreSoundEnabled ? 'Score on' : 'Score off';
 
   const scoringModeButton = document.getElementById('scoringModeButton');
   const scoringModeValue = document.getElementById('scoringModeValue');
   const isRally = scoringMode === 'rally';
-  scoringModeValue.textContent = isRally ? 'RALLY' : 'STD';
-  scoringModeButton.classList.toggle('rally-mode', isRally);
+  scoringModeValue.textContent = isRally ? 'RALLY' : 'STANDARD';
   scoringModeButton.setAttribute('aria-label', isRally ? 'Switch to standard scoring' : 'Switch to rally scoring');
-  scoringModeButton.title = isRally ? 'Rally scoring' : 'Standard scoring';
 
   const leftServerArrows = document.getElementById('leftServerArrows');
   const rightServerArrows = document.getElementById('rightServerArrows');
@@ -773,6 +773,18 @@ function autoRally(side) {
   sideOut();
 }
 
+
+function openSettings() {
+  document.getElementById('settingsOverlay').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settingsOverlay').classList.remove('open');
+}
+
+function closeSettingsFromBackdrop(event) {
+  if (event.target.id === 'settingsOverlay') closeSettings();
+}
 
 function togglePointsSound() {
   pointsSoundEnabled = !pointsSoundEnabled;
