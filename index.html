@@ -596,6 +596,8 @@ const defaultState = {
 let state = loadState();
 let previousState = null;
 let editMode = false;
+let editModeTimer = null;
+const EDIT_MODE_TIMEOUT_MS = 10000;
 let scoreAnnouncementTimer = null;
 let gameOver = false;
 let pointsSoundEnabled = true;
@@ -667,11 +669,32 @@ function render() {
   const leftIsServing = state.servingTeam === leftTeam;
   const rightIsServing = state.servingTeam === rightTeam;
 
-  leftServerArrows.children[0].style.visibility = editMode ? 'visible' : 'hidden';
-  leftServerArrows.children[1].style.visibility = editMode && leftIsServing ? 'visible' : 'hidden';
+  // Server arrow display in Edit mode:
+  // serving server 1 -> up only
+  // serving server 2 -> down only
+  // non-serving side (blank server) -> up only
+  const setServerArrowVisibility = (arrows, isServing) => {
+    const upArrow = arrows.children[0];
+    const downArrow = arrows.children[1];
 
-  rightServerArrows.children[0].style.visibility = editMode ? 'visible' : 'hidden';
-  rightServerArrows.children[1].style.visibility = editMode && rightIsServing ? 'visible' : 'hidden';
+    if (!editMode) {
+      upArrow.style.visibility = 'hidden';
+      downArrow.style.visibility = 'hidden';
+      return;
+    }
+
+    if (!isServing) {
+      upArrow.style.visibility = 'visible';
+      downArrow.style.visibility = 'hidden';
+      return;
+    }
+
+    upArrow.style.visibility = state.serverNumber === 1 ? 'visible' : 'hidden';
+    downArrow.style.visibility = state.serverNumber === 2 ? 'visible' : 'hidden';
+  };
+
+  setServerArrowVisibility(leftServerArrows, leftIsServing);
+  setServerArrowVisibility(rightServerArrows, rightIsServing);
 }
 
 function renderTeam(panelId, scoreId, serverId, team) {
@@ -847,8 +870,33 @@ function toggleScoringMode() {
   render();
 }
 
+function clearEditModeTimer() {
+  if (editModeTimer) {
+    clearTimeout(editModeTimer);
+    editModeTimer = null;
+  }
+}
+
+function restartEditModeTimer() {
+  clearEditModeTimer();
+  if (!editMode) return;
+
+  editModeTimer = setTimeout(() => {
+    editMode = false;
+    editModeTimer = null;
+    render();
+  }, EDIT_MODE_TIMEOUT_MS);
+}
+
 function toggleEditMode() {
   editMode = !editMode;
+
+  if (editMode) {
+    restartEditModeTimer();
+  } else {
+    clearEditModeTimer();
+  }
+
   render();
 }
 
@@ -870,6 +918,7 @@ function adjustVisibleScore(side, delta) {
 
   render();
   save();
+  restartEditModeTimer();
 }
 
 function adjustVisibleServer(side, delta) {
@@ -916,6 +965,7 @@ function adjustVisibleServer(side, delta) {
 
   render();
   save();
+  restartEditModeTimer();
 }
 
 
@@ -1026,6 +1076,7 @@ function resetGame() {
   if (scoringMode === 'rally') state.serverNumber = 1;
   previousState = null;
   editMode = false;
+  clearEditModeTimer();
   gameOver = false;
   render();
   save();
