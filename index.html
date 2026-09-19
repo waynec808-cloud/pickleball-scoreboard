@@ -508,7 +508,25 @@
     .setting-control { min-height:46px; padding:0 16px; background:#444; color:white; border-radius:10px; font-size:16px; min-width:110px; }
     .setting-control.on { background:#1267d6; }
     .settings-glyph { font-size:38px; line-height:1; }
-  </style>
+  
+    /* v3.4.5 iPad fit refinements */
+    .scores { height: calc(65vh + 20px); min-height: 400px; }
+    .icon-controls { height: 64px; margin-top: 14px; gap: 12px; }
+    .auto-controls { height: 72px; margin-top: 6px; }
+    .auto-button { height: 72px !important; min-height: 72px !important; }
+
+    @media (max-height: 850px) {
+      body {
+        padding-top: max(6px, env(safe-area-inset-top));
+        padding-bottom: max(6px, env(safe-area-inset-bottom));
+      }
+      .scores { height: 64vh; min-height: 360px; }
+      .icon-controls { margin-top: 8px; height: 60px; }
+      .auto-controls { height: 68px; margin-top: 4px; }
+      .auto-button { height: 68px !important; min-height: 68px !important; }
+    }
+
+</style>
 </head>
 
 <body>
