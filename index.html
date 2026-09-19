@@ -527,11 +527,12 @@
     }
 
 
-    /* v3.4.6: keep two-digit scores clear of the server number */
-    .score.two-digit-score {
-      font-size: clamp(155px, 31vw, 420px);
-    }
 
+    /* v3.4.8: full-size score and original-size server, moved farther right */
+    .server {
+      right: 2.5%;
+      font-size: clamp(100px, 16vw, 210px);
+    }
 </style>
 </head>
 
@@ -602,12 +603,15 @@
     <div class="setting-row"><span>Point audio</span><button id="pointsSoundButton" class="setting-control" onclick="togglePointsSound()">ON</button></div>
     <div class="setting-row"><span>Score audio</span><button id="scoreSoundButton" class="setting-control" onclick="toggleScoreSound()">ON</button></div>
     <div class="setting-row"><span>Scoring method</span><button id="scoringModeButton" class="setting-control" onclick="toggleScoringMode()"><span id="scoringModeValue">STANDARD</span></button></div>
+    <div class="setting-row"><span>Version / cache</span><span id="versionCacheValue">v3.4.8 / v3-4-8</span></div>
   </div>
 </div>
 
 <script>
 const STORAGE_KEY = 'pickleballScoreboardStateV1';
 const SCORING_MODE_KEY = 'pickleballScoreboardScoringModeV1';
+const APP_VERSION = 'v3.4.8';
+const CACHE_VERSION = 'v3-4-8';
 
 const defaultState = {
   scoreA: 0,
@@ -675,6 +679,8 @@ function render() {
   scoreSoundButton.classList.toggle('on', scoreSoundEnabled);
   scoreSoundButton.setAttribute('aria-label', scoreSoundEnabled ? 'Turn score announcements off' : 'Turn score announcements on');
 
+  document.getElementById('versionCacheValue').textContent = `${APP_VERSION} / ${CACHE_VERSION}`;
+
   const scoringModeButton = document.getElementById('scoringModeButton');
   const scoringModeValue = document.getElementById('scoringModeValue');
   const isRally = scoringMode === 'rally';
@@ -729,7 +735,6 @@ function renderTeam(panelId, scoreId, serverId, team) {
   panel.className = 'team ' + (team === 'A' ? 'team-a' : 'team-b');
   const teamScore = team === 'A' ? state.scoreA : state.scoreB;
   score.textContent = teamScore;
-  score.classList.toggle('two-digit-score', teamScore >= 10);
 
   const isServingTeam = state.servingTeam === team;
 
