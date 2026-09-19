@@ -526,6 +526,12 @@
       .auto-button { height: 68px !important; min-height: 68px !important; }
     }
 
+
+    /* v3.4.6: keep two-digit scores clear of the server number */
+    .score.two-digit-score {
+      font-size: clamp(155px, 31vw, 420px);
+    }
+
 </style>
 </head>
 
@@ -721,7 +727,9 @@ function renderTeam(panelId, scoreId, serverId, team) {
   const server = document.getElementById(serverId);
 
   panel.className = 'team ' + (team === 'A' ? 'team-a' : 'team-b');
-  score.textContent = team === 'A' ? state.scoreA : state.scoreB;
+  const teamScore = team === 'A' ? state.scoreA : state.scoreB;
+  score.textContent = teamScore;
+  score.classList.toggle('two-digit-score', teamScore >= 10);
 
   const isServingTeam = state.servingTeam === team;
 
