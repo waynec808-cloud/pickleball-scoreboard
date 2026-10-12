@@ -1,5 +1,5 @@
-// Pickleball Scoreboard v3.4.8
-const CACHE = 'pickleball-scoreboard-v3-8';
+// Pickleball Scoreboard v3.4.9
+const CACHE = 'pickleball-scoreboard-v3-4-9';
 
 const CORE_ASSETS = [
   './',

@@ -512,8 +512,8 @@
     /* v3.4.5 iPad fit refinements */
     .scores { height: calc(65vh + 20px); min-height: 400px; }
     .icon-controls { height: 64px; margin-top: 14px; gap: 12px; }
-    .auto-controls { height: 72px; margin-top: 6px; }
-    .auto-button { height: 72px !important; min-height: 72px !important; }
+    .auto-controls { height: 144px; margin-top: 6px; }
+    .auto-button { height: 144px !important; min-height: 144px !important; }
 
     @media (max-height: 850px) {
       body {
@@ -522,13 +522,13 @@
       }
       .scores { height: 64vh; min-height: 360px; }
       .icon-controls { margin-top: 8px; height: 60px; }
-      .auto-controls { height: 68px; margin-top: 4px; }
-      .auto-button { height: 68px !important; min-height: 68px !important; }
+      .auto-controls { height: 136px; margin-top: 4px; }
+      .auto-button { height: 136px !important; min-height: 136px !important; }
     }
 
 
 
-    /* v3.4.8: full-size score and original-size server, moved farther right */
+    /* v3.4.9: full-size score and original-size server, moved farther right */
     .server {
       right: 2.5%;
       font-size: clamp(100px, 16vw, 210px);
@@ -603,15 +603,15 @@
     <div class="setting-row"><span>Point audio</span><button id="pointsSoundButton" class="setting-control" onclick="togglePointsSound()">ON</button></div>
     <div class="setting-row"><span>Score audio</span><button id="scoreSoundButton" class="setting-control" onclick="toggleScoreSound()">ON</button></div>
     <div class="setting-row"><span>Scoring method</span><button id="scoringModeButton" class="setting-control" onclick="toggleScoringMode()"><span id="scoringModeValue">STANDARD</span></button></div>
-    <div class="setting-row"><span>Version / cache</span><span id="versionCacheValue">v3.4.8 / v3-4-8</span></div>
+    <div class="setting-row"><span>Version / cache</span><span id="versionCacheValue">v3.4.9 / v3-4-9</span></div>
   </div>
 </div>
 
 <script>
 const STORAGE_KEY = 'pickleballScoreboardStateV1';
 const SCORING_MODE_KEY = 'pickleballScoreboardScoringModeV1';
-const APP_VERSION = 'v3.4.8';
-const CACHE_VERSION = 'v3-4-8';
+const APP_VERSION = 'v3.4.9';
+const CACHE_VERSION = 'v3-4-9';
 
 const defaultState = {
   scoreA: 0,
