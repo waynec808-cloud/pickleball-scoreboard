@@ -1,4 +1,8 @@
 // Pickleball Scoreboard v3.4.9
+// Copyright © 2026 Wayne Ching. All rights reserved.
+// Personal, non-commercial use only.
+// See LICENSE for terms.
+
 const CACHE = 'pickleball-scoreboard-v3-4-9';
 
 const CORE_ASSETS = [
